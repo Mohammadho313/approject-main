@@ -91,3 +91,17 @@ class Patient(User):
     def new_appointment(self, clinic, date):
         appointment = Appointment.create(status='PENDING', date=date, user=self, clinic=clinic)
         return appointment
+
+
+class Monshi(User):
+    user_name = ForeignKeyField(User, backref='monshi', primary_key=True)
+    clinic = ForeignKeyField(Clinic, backref='monshiha')
+
+    def get_active_appointments(self):
+        return [appointment for appointment in Appointment.select().where((Appointment.clinic == self.clinic) & (Appointment.status == 'ACTIVE'))]
+
+    def get_pending_appointments(self):
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PENDING'))]
+
+    def add_appointments(self, amount: int):
+        add_reservation_amount(id=self.clinic.id, amount=amount)
