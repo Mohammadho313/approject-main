@@ -35,3 +35,25 @@ class User(BaseModel):
                 return user
         except:
             return None
+
+class Clinic(BaseModel):
+    id = CharField(primary_key=True)
+    name = CharField(unique=True, null=False)
+    email = CharField(unique=True, null=False)
+    address = CharField(unique=True, null=False)
+    services = CharField()
+    is_available = BooleanField()
+
+    @classmethod
+    def get_clinics(cls):
+        return [clinic for clinic in cls.select()]
+    
+    @classmethod
+    def search_clinics(cls, query: str) -> list:
+        query = query.lower()
+        clinics = (cls
+                .select()
+                .where((fn.LOWER(cls.name).contains(query)) | 
+                        (fn.LOWER(cls.services).contains(query)))
+                .limit(5))
+        return [clinic for clinic in clinics]
