@@ -74,3 +74,20 @@ class Appointment(BaseModel):
         self.status = "ACTIVE"
         self.date = date
         self.save()
+
+
+class Patient(User):
+    user_name = ForeignKeyField(User, backref='patient', primary_key=True)
+
+    def get_pending_appointments(self):
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PENDING'))]
+
+    def get_active_appointments(self):
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'ACTIVE'))]
+
+    def get_past_appointments(self):
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PAST'))]
+
+    def new_appointment(self, clinic, date):
+        appointment = Appointment.create(status='PENDING', date=date, user=self, clinic=clinic)
+        return appointment
