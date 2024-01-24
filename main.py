@@ -53,6 +53,46 @@ def view_past_appointments(patient):
     cli_menu([f"{appointment.clinic.name}: {appointment.date}" for appointment in appointments])
 
 
+def monshi_main_menu(monshi):
+    while True:
+        match cli_menu(["pending appointments", "current appointments"]):
+            case "pending appointments":
+                monshi_view_pending_appointments(monshi)
+            case "current appointments":
+                monshi_view_active_appointments(monshi)
+
+
+def monshi_view_active_appointments(monshi):
+    apps = monshi.get_pending_appointments()
+    while True:
+        match cli_menu([f"{appointment.user.name}" for appointment in apps]):
+            case x:
+                apps[x].cancel_appointment()
+
+
+def monshi_view_pending_appointments(monshi):
+    appointments = monshi.get_active_appointments()
+    while True:
+        match cli_menu([f"{appointment.user.name}" for appointment in appointments]):
+            case x:
+                match cli_menu(["approve", "cancel"]):
+                    case "approve":
+                        break
+                    case "cancel":
+                        while True:
+                            date = input("Date (YYYY/MM/DD HH:MM): ")
+                            try:
+                                dt = datetime.strptime(date, "%Y/%m/%d %H:%M")
+                                appointments[x].accept_appointment(dt)
+                                break
+                            except ValueError:
+                                print("Date error")
+
+                    case 1:
+                        appointments[x].cancel_appointment()
+
+
+
 def main():
     print("Khosh Amadid!")
     while True:
@@ -67,6 +107,7 @@ def main():
                 patient_main_menu()
             if user.monshi != None:
                 print("Monshi")
+                monshi_main_menu()
             break
         else:
             print("Wrong Creds")
