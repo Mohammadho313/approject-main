@@ -22,7 +22,7 @@ class BaseModel(Model):
 
 
 class User(BaseModel):
-    username = CharField(primary_key=True)
+    username = CharField(primary_key=True, unique=True)
     password = CharField(null=False)
     name = CharField(null=False)
     email = CharField(null=False, unique=True)
@@ -35,6 +35,8 @@ class User(BaseModel):
                 return user
         except:
             return None
+    class Meta:
+        database = db
 
 class Clinic(BaseModel):
     id = CharField(primary_key=True)
@@ -57,12 +59,13 @@ class Clinic(BaseModel):
                         (fn.LOWER(cls.services).contains(query)))
                 .limit(5))
         return [clinic for clinic in clinics]
-
+    class Meta:
+        database = db
 
 class Appointment(BaseModel):
     id = AutoField()
     status = CharField()
-    date = DateTimeField()
+    date = DateTimeField(null=True)
     user = ForeignKeyField(User, backref='appointments')
     clinic = ForeignKeyField(Clinic, backref='appointments')
 
@@ -74,34 +77,36 @@ class Appointment(BaseModel):
         self.status = "ACTIVE"
         self.date = date
         self.save()
+    class Meta:
+        database = db
 
-
-class Patient(User):
-    user_name = ForeignKeyField(User, backref='patient', primary_key=True)
+class Patient(BaseModel):
+    user = ForeignKeyField(User, backref='patient')
 
     def get_pending_appointments(self):
-        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PENDING'))]
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self.user) & (Appointment.status == 'PENDING'))]
 
     def get_active_appointments(self):
-        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'ACTIVE'))]
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self.user) & (Appointment.status == 'ACTIVE'))]
 
     def get_past_appointments(self):
-        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PAST'))]
+        return [appointment for appointment in Appointment.select().where((Appointment.user == self.user) & (Appointment.status == 'PAST'))]
 
-    def new_appointment(self, clinic, date):
-        appointment = Appointment.create(status='PENDING', date=date, user=self, clinic=clinic)
+    def new_appointment(self, clinic):
+        appointment = Appointment.create(status='PENDING', user=self.user, clinic=clinic)
         return appointment
+    class Meta:
+        database = db
 
-
-class Monshi(User):
-    user_name = ForeignKeyField(User, backref='monshi', primary_key=True)
-    clinic = ForeignKeyField(Clinic, backref='monshiha')
+class Monshi(BaseModel):
+    user = ForeignKeyField(User, backref='monshi')
+    clinic = ForeignKeyField(Clinic, backref='monshiha', null=True)
 
     def get_active_appointments(self):
         return [appointment for appointment in Appointment.select().where((Appointment.clinic == self.clinic) & (Appointment.status == 'ACTIVE'))]
 
     def get_pending_appointments(self):
-        return [appointment for appointment in Appointment.select().where((Appointment.user == self) & (Appointment.status == 'PENDING'))]
+        return [appointment for appointment in Appointment.select().where((Appointment.clinic == self.clinic) & (Appointment.status == 'PENDING'))]
 
-    def add_appointments(self, amount: int):
-        add_reservation_amount(id=self.clinic.id, amount=amount)
+    class Meta:
+        database = db
