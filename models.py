@@ -57,3 +57,20 @@ class Clinic(BaseModel):
                         (fn.LOWER(cls.services).contains(query)))
                 .limit(5))
         return [clinic for clinic in clinics]
+
+
+class Appointment(BaseModel):
+    id = AutoField()
+    status = CharField()
+    date = DateTimeField()
+    user = ForeignKeyField(User, backref='appointments')
+    clinic = ForeignKeyField(Clinic, backref='appointments')
+
+    def cancel_appointment(self):
+        self.status = "CANCELLED"
+        self.save()
+
+    def accept_appointment(self, date):
+        self.status = "ACTIVE"
+        self.date = date
+        self.save()
